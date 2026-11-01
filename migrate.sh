@@ -10,5 +10,5 @@ fi
 
 # Run migration
 echo "Running migrations on made-app..."
-docker exec -it made-app ./migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable" up
+docker compose exec -T app ./migrate -path ./migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable" up
 

@@ -28,6 +28,7 @@ services:
     image: ghcr.io/bagusyanuar/erp-digital-printing-be:${BACKEND_TAG:-latest}
     container_name: made-app
     restart: unless-stopped
+    pull_policy: always
     env_file: env/backend/.env
     environment:
       DB_HOST: db
@@ -59,6 +60,7 @@ services:
     image: ghcr.io/bagusyanuar/erp-digital-printing:${FRONTEND_TAG:-latest}
     container_name: made-frontend
     restart: unless-stopped
+    pull_policy: always
     env_file: env/frontend/.env
     networks:
       - made-network

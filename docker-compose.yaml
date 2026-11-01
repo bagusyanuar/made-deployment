@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password123}
       POSTGRES_DB: ${DB_NAME:-db_made_printing}
     ports:
-      - "127.0.0.1:${DB_PORT:-5432}:5432" # Bind ke localhost untuk SSH tunnel / maintenance
+      - "${DB_PORT:-5432}:5432" # Buka port agar bisa diakses langsung dari DBeaver / remote
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

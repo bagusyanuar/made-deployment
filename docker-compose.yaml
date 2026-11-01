@@ -1,0 +1,106 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: made-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password123}
+      POSTGRES_DB: ${DB_NAME:-db_made_printing}
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432" # Bind ke localhost untuk SSH tunnel / maintenance
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - made-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${DB_USER:-postgres} -d $${DB_NAME:-db_made_printing}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    image: ghcr.io/bagusyanuar/erp-digital-printing-be:${BACKEND_TAG:-latest}
+    container_name: made-app
+    restart: unless-stopped
+    env_file: env/backend/.env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_PASSWORD: ${DB_PASSWORD:-password123}
+    volumes:
+      - ./.logs:/app/.logs
+      - ./configs:/app/configs:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - made-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    image: ghcr.io/bagusyanuar/erp-digital-printing:${FRONTEND_TAG:-latest}
+    container_name: made-frontend
+    restart: unless-stopped
+    env_file: env/frontend/.env
+    networks:
+      - made-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.10'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: nginx:alpine
+    container_name: made-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/cert:/etc/nginx/cert:ro
+    depends_on:
+      - app
+      - frontend
+    networks:
+      - made-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  made-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
